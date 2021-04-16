@@ -10,6 +10,7 @@ from ..utils import common_functions as c_f
 import logging
 import tqdm
 
+
 class StanfordOnlineProducts(Dataset):
     url = 'ftp://cs.stanford.edu/cs/cvgl/Stanford_Online_Products.zip'
     filename = 'Stanford_Online_Products.zip'
@@ -43,14 +44,16 @@ class StanfordOnlineProducts(Dataset):
         from pandas import read_csv
         info_files = {"train": "Ebay_train.txt", "test": "Ebay_test.txt"}
         self.img_paths = []
-        self.labels = []
+        labels = []
+        super_labels = []
         global_idx = 0
         for k, v in info_files.items():
             curr_file = read_csv(os.path.join(self.dataset_folder, v), delim_whitespace=True, header=0).values
-            self.img_paths.extend([os.path.join(self.dataset_folder, x) for x in list(curr_file[:,3])])
-            self.labels.extend(list(curr_file[:,1] - 1))
+            self.img_paths.extend([os.path.join(self.dataset_folder, x) for x in list(curr_file[:, 3])])
+            labels.extend(list(curr_file[:, 1] - 1))
+            super_labels.extend(list(curr_file[:, 2] - 1))
             global_idx += len(curr_file)
-        self.labels = np.array(self.labels)
+        self.labels = np.stack((labels, super_labels), axis=1)
 
     def set_paths_and_labels(self, assert_files_exist=False):
         self.dataset_folder = os.path.join(self.root, "Stanford_Online_Products")
@@ -65,4 +68,4 @@ class StanfordOnlineProducts(Dataset):
     def download_dataset(self):
         download_url(self.url, self.root, filename=self.filename, md5=self.md5)
         with zipfile.ZipFile(os.path.join(self.root, self.filename), 'r') as zip_ref:
-            zip_ref.extractall(self.root, members = c_f.extract_progress(zip_ref))
+            zip_ref.extractall(self.root, members=c_f.extract_progress(zip_ref))
